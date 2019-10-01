@@ -66,9 +66,10 @@ namespace WorkTimeTrackingTests
         [Fact]
         public void ValidateContentInvokesValidateNoDuplicatedEmployeeDate()
         {
-            IList<object> content = new List<object> { _employees.First()};
+            IList<IBookedRecords> content = new List<IBookedRecords> { _employees.First()};
+            var parsedResult = new ParsedResult() { BookedRecords = content };
 
-            _workTimeService.ValidateContent(content);
+            _workTimeService.ValidateContent(parsedResult);
 
             _validationService.Received().ValidateNoDuplicatedEmployeeDate(Arg.Any<IList<Employee>>());
 
@@ -78,9 +79,10 @@ namespace WorkTimeTrackingTests
         [Fact]
         public void ValidateContentInvokesValidateNoOverlappedMeetings()
         {
-            IList<object> content = new List<object> { _meetings.First() };
+            IList<IBookedRecords> content = new List<IBookedRecords> { _meetings.First() };
+            var parsedResult = new ParsedResult { BookedRecords = content };
 
-            _workTimeService.ValidateContent(content);
+            _workTimeService.ValidateContent(parsedResult);
 
             _validationService.Received().ValidateNoOverlappedMeetings(Arg.Any<IList<Meeting>>());
 
@@ -122,9 +124,9 @@ namespace WorkTimeTrackingTests
         {
             _workTimeService.ParseInput($"{_path}\\Files\\InvalidMeetingDuration");
 
-            var error = new InvalidInputError(string.Format(ErrorMessages.InvalidMeetingDuration, "k", 3));
+            var error = new InvalidDuration(string.Format(ErrorMessages.InvalidMeetingDuration, "k", 3));
 
-            _errorResolver.Received().Resolve(Arg.Is<InvalidInputError>(x => x.Code == ExitCode.InvalidInput && x.Message == error.Message));
+            _errorResolver.Received().Resolve(Arg.Is<InvalidDuration>(x => x.Code == ExitCode.InvalidDuration && x.Message == error.Message));
         }
 
         [Fact]
@@ -132,9 +134,9 @@ namespace WorkTimeTrackingTests
         {
             _workTimeService.ParseInput($"{_path}\\Files\\InvalidDate");
 
-            var error = new InvalidInputError(string.Format(ErrorMessages.InvalidDate, "2011-03-k 09:00", 3));
+            var error = new InvalidDate(string.Format(ErrorMessages.InvalidDate, "2011-03-k 09:00", 3));
 
-            _errorResolver.Received().Resolve(Arg.Is<InvalidInputError>(x => x.Code == ExitCode.InvalidInput && x.Message == error.Message));
+            _errorResolver.Received().Resolve(Arg.Is<InvalidDate>(x => x.Code == ExitCode.InvalidDate && x.Message == error.Message));
         }
     }
 }

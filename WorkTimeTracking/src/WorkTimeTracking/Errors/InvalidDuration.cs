@@ -2,16 +2,16 @@
 
 namespace WorkTimeTracking.Errors
 {
-    internal class InvalidInputError : IResult
+    internal class InvalidDuration : IResult
     {
         public string Message { get; set; }
 
         public ExitCode Code { get; set; }
 
-        public InvalidInputError(string message)
+        public InvalidDuration(string message)
         {
             Message = message;
-            Code = ExitCode.InvalidInput;
+            Code = ExitCode.InvalidDuration;
         }
     }
 }

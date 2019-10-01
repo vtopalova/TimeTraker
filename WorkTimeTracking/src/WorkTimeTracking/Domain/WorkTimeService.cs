@@ -22,16 +22,17 @@ namespace WorkTimeTracking.Domain
             _errorResolver = errorResolver;
         }
 
-        public IList<object> ParseInput(string filename)
+        public ParsedResult ParseInput(string filename)
         {
             return ReadFile(filename);
         }
-        public void ValidateContent(IList<object> parsedContent)
+
+        public void ValidateContent(ParsedResult parsedContent)
         {
-            var allEmployees = parsedContent.Where(d => d.GetType() == typeof(Employee)).Select(e => (Employee)e)
+            var allEmployees = parsedContent.BookedRecords.Where(d => d.GetType() == typeof(Employee)).Select(e => (Employee)e)
                 .ToList();
 
-            var allMeetings = parsedContent.Where(d => d.GetType() == typeof(Meeting)).Select(e => (Meeting)e)
+            var allMeetings = parsedContent.BookedRecords.Where(d => d.GetType() == typeof(Meeting)).Select(e => (Meeting)e)
                 .ToList();
 
             if (allEmployees.Any())
@@ -46,9 +47,9 @@ namespace WorkTimeTracking.Domain
 
         }
 
-        public IList<BookingContent> CreateOutput(IList<object> bookingContent)
+        public void CreateOutput(ParsedResult bookingContent)
         {
-            var bookingRecords = bookingContent.Select(d => d as IBookedRecords)
+            var bookingRecords = bookingContent.BookedRecords.Select(d => d as IBookedRecords)
                           .ToList();
 
             var dateBookings = bookingRecords.GroupBy(d => d.Date.Date).Select(p => new { Date = p.Key, Bookings = p.Where(k => k.Date.Date == p.Key) });
@@ -75,10 +76,9 @@ namespace WorkTimeTracking.Domain
                     }
                 }
             }
-            return new List<BookingContent>();
         }
 
-        private IList<object> ReadFile(string filename)
+        private ParsedResult ReadFile(string filename)
         {
             var listInputRecords = new List<InputWorkingRecords>();
 
@@ -94,7 +94,7 @@ namespace WorkTimeTracking.Domain
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _errorResolver.Resolve(new UnknownError(ex.Message));
             }
@@ -102,9 +102,9 @@ namespace WorkTimeTracking.Domain
             return ParseContent(listInputRecords);
         }
 
-        private IList<object> ParseContent(IList<InputWorkingRecords> listRecords)
+        private ParsedResult ParseContent(IList<InputWorkingRecords> listRecords)
         {
-            var parsedResult = new List<object>();
+            var parsedResult = new ParsedResult();
 
             CultureInfo provider = CultureInfo.InvariantCulture;
             int lineCounter = 1;
@@ -115,20 +115,25 @@ namespace WorkTimeTracking.Domain
 
                 if (lineCounter == 1)
                 {
-                    if (ParseOfficeHours(sections, provider).Code != ExitCode.Success)
-                    { 
-                        break;
+                    var parseOfficeHours = ParseOfficeHours(sections, provider);
+                    if (parseOfficeHours.Code != ExitCode.Success)
+                    {
+                        parsedResult.Result = parseOfficeHours;
+                        return parsedResult;
                     }
                 }
                 else
                 {
-                    var bookedContent = ParseBookingContent(sections, lineCounter);
-                    if (bookedContent == null)
-                        break;
-
-                    parsedResult.AddRange(bookedContent);
+                    var parsedContent = ParseBookingContent(sections, lineCounter);
+                    if (parsedContent.Result.Code != ExitCode.Success)
+                    {
+                        return parsedContent;
+                    }
+                    else
+                    {
+                        parsedResult.BookedRecords.Add(parsedContent.BookedRecords.First());
+                    }
                 }
-
                 lineCounter++;
             }
 
@@ -172,57 +177,79 @@ namespace WorkTimeTracking.Domain
             return new SuccessfulResult();
         }
 
-        private IList<object> ParseBookingContent(string[] content, int lineCounter)
+        private ParsedResult ParseBookingContent(string[] content, int lineCounter)
         {
-            IList<object> parsedResult = new List<object>();
+            var result = new ParsedResult();
 
             var inputDate = string.Concat(content[0], " ", content[1]);
 
             if (!DateTime.TryParse(inputDate, out var date))
             {
-                var parseError = new InvalidInputError(string.Format(ErrorMessages.InvalidDate, inputDate, lineCounter));
+                var parseError = new InvalidDate(string.Format(ErrorMessages.InvalidDate, inputDate, lineCounter));
                 _errorResolver.Resolve(parseError);
-                return null;
+                result.Result = parseError;
+                return result;
             }
 
             string dateString = content[0] + " " + content[1];
-            string formatMeeting = "yyyy-MM-dd HH:mm";
-            string formatEmployee = "yyyy-MM-dd HH:mm:ss";
 
-            if (DateTime.TryParseExact(
-                dateString,
-                formatMeeting,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out var theDate))
+            result = TryParseMeetingRecord(dateString, content[2], lineCounter);
+
+            if (result.Result.Code == ExitCode.InvalidDate)
             {
-                var parseDuration = int.TryParse(content[2], out var duration);
+                result = TryParseEmployeeRecord(dateString, content[2], lineCounter);
+                if (result.Result.Code != ExitCode.Success)
+                {
+                    _errorResolver.Resolve(result.Result);
+                }
+            }
+
+            return result;
+        }
+
+        private ParsedResult TryParseMeetingRecord(string dateString, string bookedDuration, int lineCounter)
+        {
+            var result = new ParsedResult();
+
+            string formatMeeting = "yyyy-MM-dd HH:mm";
+
+            if (DateTime.TryParseExact(dateString, formatMeeting, CultureInfo.InvariantCulture, DateTimeStyles.None, out var theDate))
+            {
+                var parseDuration = int.TryParse(bookedDuration, out var duration);
                 if (!parseDuration)
                 {
-                    var errorDuration = new InvalidInputError(string.Format(ErrorMessages.InvalidMeetingDuration, content[2], lineCounter));
+                    var errorDuration = new InvalidDuration(string.Format(ErrorMessages.InvalidMeetingDuration, bookedDuration, lineCounter));
                     _errorResolver.Resolve(errorDuration);
-                    return null;
+                    result.Result = errorDuration;
                 }
-
-                parsedResult.Add(new Meeting(theDate, duration, lineCounter));
+                else
+                {
+                    result.BookedRecords.Add(new Meeting(theDate, duration, lineCounter));
+                }
             }
             else
             {
-                if (!DateTime.TryParseExact(
-                    dateString,
-                    formatEmployee,
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out theDate))
-                {
-                    _errorResolver.Resolve(
-                        new InvalidInputError(String.Format(ErrorMessages.InvalidDate, dateString, lineCounter)));
-                }
-
-                parsedResult.Add(new Employee(theDate, content[2], lineCounter));
+                result.Result = new InvalidDate(ErrorMessages.InvalidDate);
             }
 
-            return parsedResult;
+            return result;
+        }
+
+        private ParsedResult TryParseEmployeeRecord(string dateString, string employeeAcr, int lineCounter)
+        {
+            string formatEmployee = "yyyy-MM-dd HH:mm:ss";
+            var result = new ParsedResult();
+
+            if (!DateTime.TryParseExact(dateString, formatEmployee, CultureInfo.InvariantCulture, DateTimeStyles.None, out var theDate))
+            {
+                var invalidEmployeeDateError = new InvalidDate(string.Format(ErrorMessages.InvalidDate, dateString, lineCounter));
+                result.Result = invalidEmployeeDateError;
+            }
+            else
+            {
+                result.BookedRecords.Add(new Employee(theDate, employeeAcr, lineCounter));
+            }
+            return result;
         }
     }
 }

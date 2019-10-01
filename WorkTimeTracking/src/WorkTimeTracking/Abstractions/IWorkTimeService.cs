@@ -3,12 +3,12 @@ using WorkTimeTracking.Domain;
 
 namespace WorkTimeTracking.Abstractions
 {
-    internal interface  IWorkTimeService
+    internal interface IWorkTimeService
     {
-        IList<object> ParseInput(string inputFile);
+        ParsedResult ParseInput(string inputFile);
 
-        void ValidateContent(IList<object> parsedContent);
+        void ValidateContent(ParsedResult parsedContent);
 
-        IList<BookingContent> CreateOutput(IList<object> parsedContent);
+        void CreateOutput(ParsedResult parsedContent);
     }
 }

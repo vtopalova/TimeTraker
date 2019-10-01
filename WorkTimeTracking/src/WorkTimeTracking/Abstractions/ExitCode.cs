@@ -3,10 +3,11 @@
     enum ExitCode
     {
         Success = 0,
-        InvalidInput = 1,
-        DuplicateEmployeeDate = 2,
-        OverlappedMeeting = 3,
-        InvalidOfficeHours = 4,
-        UnknownError = 10
+        InvalidDuration = 1,
+        InvalidDate = 2,
+        DuplicateEmployeeDate = 3,
+        OverlappedMeeting = 4,
+        InvalidOfficeHours = 5,
+        UnknownError = 500
     }
 }
