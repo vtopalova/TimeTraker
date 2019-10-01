@@ -82,14 +82,21 @@ namespace WorkTimeTracking.Domain
         {
             var listInputRecords = new List<InputWorkingRecords>();
 
-            using (var reader = new StreamReader(filename))
+            try
             {
-                Console.SetIn(reader);
-                string line;
-                while ((line = Console.ReadLine()) != null)
+                using (var reader = new StreamReader(filename))
                 {
-                    listInputRecords.Add(new InputWorkingRecords { Line = line });
+                    Console.SetIn(reader);
+                    string line;
+                    while ((line = Console.ReadLine()) != null)
+                    {
+                        listInputRecords.Add(new InputWorkingRecords { Line = line });
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
+                _errorResolver.Resolve(new UnknownError(ex.Message));
             }
 
             return ParseContent(listInputRecords);
@@ -108,11 +115,18 @@ namespace WorkTimeTracking.Domain
 
                 if (lineCounter == 1)
                 {
-                    ParseOfficeHours(sections, provider);
+                    if (ParseOfficeHours(sections, provider).Code != ExitCode.Success)
+                    { 
+                        break;
+                    }
                 }
                 else
                 {
-                    parsedResult.AddRange(ParseBookingContent(sections, lineCounter));
+                    var bookedContent = ParseBookingContent(sections, lineCounter);
+                    if (bookedContent == null)
+                        break;
+
+                    parsedResult.AddRange(bookedContent);
                 }
 
                 lineCounter++;
@@ -121,12 +135,14 @@ namespace WorkTimeTracking.Domain
             return parsedResult;
         }
 
-        private void ParseOfficeHours(string[] officeHours, CultureInfo provider)
+        private IResult ParseOfficeHours(string[] officeHours, CultureInfo provider)
         {
             if (officeHours.Length != 2)
             {
-                _errorResolver.Resolve(new InvalidInputError(
-                    "The first line should contains company office hours, in 24 hour clock format HHmm HHmm"));
+                var error = new InvalidOfficeHoursError(ErrorMessages.InvalidOfficeHours);
+                _errorResolver.Resolve(error);
+
+                return error;
             }
 
             var format = "HHmm";
@@ -136,7 +152,10 @@ namespace WorkTimeTracking.Domain
             }
             else
             {
-                _errorResolver.Resolve(new InvalidOfficeHoursError($"The start office hours {startTime} are invalid. "));
+                var errorStartHours = new InvalidOfficeHoursError(string.Format(ErrorMessages.InvalidStartHours, officeHours[0]));
+                _errorResolver.Resolve(errorStartHours);
+
+                return errorStartHours;
             }
             if (DateTime.TryParseExact(officeHours[1], format, provider, DateTimeStyles.None, out var endTime))
             {
@@ -144,8 +163,13 @@ namespace WorkTimeTracking.Domain
             }
             else
             {
-                _errorResolver.Resolve(new InvalidOfficeHoursError($"The end office hours {endTime} are invalid. "));
+                var errorEndHours = new InvalidOfficeHoursError(string.Format(ErrorMessages.InvalidEndHours, officeHours[1]));
+                _errorResolver.Resolve(errorEndHours);
+
+                return errorEndHours;
             }
+
+            return new SuccessfulResult();
         }
 
         private IList<object> ParseBookingContent(string[] content, int lineCounter)
@@ -156,7 +180,8 @@ namespace WorkTimeTracking.Domain
 
             if (!DateTime.TryParse(inputDate, out var date))
             {
-                _consoleLogger.Error($"Invalid date {inputDate} in line {lineCounter}.");
+                _consoleLogger.Error(String.Format(ErrorMessages.InvalidDate, inputDate, lineCounter));
+                return null;
             }
 
             string dateString = content[0] + " " + content[1];
@@ -173,9 +198,9 @@ namespace WorkTimeTracking.Domain
                 var parseDuration = int.TryParse(content[2], out var duration);
                 if (!parseDuration)
                 {
-                    _errorResolver.Resolve(
-                        new InvalidInputError(
-                            $"Invalid meeting's duration {content[2]} in line {lineCounter}"));
+                    var errorDuration = new InvalidInputError(string.Format(ErrorMessages.InvalidMeetingDuration, content[2], lineCounter));
+                    _errorResolver.Resolve(errorDuration);
+                    return null;
                 }
 
                 parsedResult.Add(new Meeting(theDate, duration, lineCounter));
@@ -190,7 +215,7 @@ namespace WorkTimeTracking.Domain
                     out theDate))
                 {
                     _errorResolver.Resolve(
-                        new InvalidInputError($"Invalid date {dateString} in line {lineCounter}"));
+                        new InvalidInputError(String.Format(ErrorMessages.InvalidDate, dateString, lineCounter)));
                 }
 
                 parsedResult.Add(new Employee(theDate, content[2], lineCounter));
