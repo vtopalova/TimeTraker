@@ -180,7 +180,8 @@ namespace WorkTimeTracking.Domain
 
             if (!DateTime.TryParse(inputDate, out var date))
             {
-                _consoleLogger.Error(String.Format(ErrorMessages.InvalidDate, inputDate, lineCounter));
+                var parseError = new InvalidInputError(string.Format(ErrorMessages.InvalidDate, inputDate, lineCounter));
+                _errorResolver.Resolve(parseError);
                 return null;
             }
 

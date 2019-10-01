@@ -112,7 +112,7 @@ namespace WorkTimeTrackingTests
         {
             _workTimeService.ParseInput($"{_path}\\Files\\InvalidEndOfficeHours");
 
-            var error = new InvalidOfficeHoursError(string.Format(ErrorMessages.InvalidStartHours, "17F0"));
+            var error = new InvalidOfficeHoursError(string.Format(ErrorMessages.InvalidEndHours, "17F0"));
 
             _errorResolver.Received().Resolve(Arg.Is<InvalidOfficeHoursError>(x => x.Code == ExitCode.InvalidOfficeHours && x.Message == error.Message));
         }
@@ -130,9 +130,9 @@ namespace WorkTimeTrackingTests
         [Fact]
         public void ParseContentInvalidDate()
         {
-            _workTimeService.ParseInput($"{_path}\\Files\\InvalidMeetingDuration");
+            _workTimeService.ParseInput($"{_path}\\Files\\InvalidDate");
 
-            var error = new InvalidInputError(string.Format(ErrorMessages.InvalidDate, "k", 3));
+            var error = new InvalidInputError(string.Format(ErrorMessages.InvalidDate, "2011-03-k 09:00", 3));
 
             _errorResolver.Received().Resolve(Arg.Is<InvalidInputError>(x => x.Code == ExitCode.InvalidInput && x.Message == error.Message));
         }
