@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29001.49
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkTimeTracking", "WorkTimeTracking\WorkTimeTracking.csproj", "{446A6A9B-B965-460B-A0E0-8C5511056C8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkTimeTracking", "src\WorkTimeTracking\WorkTimeTracking.csproj", "{446A6A9B-B965-460B-A0E0-8C5511056C8D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkTimeTrackingTests", "test\WorkTimeTrackingTests\WorkTimeTrackingTests.csproj", "{940C48D5-11E7-4491-9CCC-ABBC7BB4C608}"
 EndProject

@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\WorkTimeTracking\WorkTimeTracking.csproj" />
+    <ProjectReference Include="..\..\src\WorkTimeTracking\WorkTimeTracking.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WorkTimeTracking": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\Interviews\\WorkingTimeTracker\\WorkTimeTracking\\Files\\OriginalFile"
+    }
+  }
+}
