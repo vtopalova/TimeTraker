@@ -26,7 +26,6 @@ namespace WorkTimeTracking.Domain
         {
             return ReadFile(filename);
         }
-
         public void ValidateContent(IList<object> parsedContent)
         {
             var allEmployees = parsedContent.Where(d => d.GetType() == typeof(Employee)).Select(e => (Employee)e)
@@ -47,13 +46,38 @@ namespace WorkTimeTracking.Domain
 
         }
 
-        public IList<BookingContent> CreateOutput(IList<object> bookingContent, string outputFile)
+        public IList<BookingContent> CreateOutput(IList<object> bookingContent)
         {
-            var allEmployees = bookingContent.Where(d => d.GetType() == typeof(IBookedRecords)).Select(e => (Employee)e)
+            var bookingRecords = bookingContent.Select(d => d as IBookedRecords)
                           .ToList();
 
+            var dateBookings = bookingRecords.GroupBy(d => d.Date.Date).Select(p => new { Date = p.Key, Bookings = p.Where(k => k.Date.Date == p.Key) });
+
+            foreach (var date in dateBookings)
+            {
+                _consoleLogger.Info(date.Date.ToString("yyyy-MM-dd"));
+
+                foreach (var records in date.Bookings)
+                {
+                    if (records is Employee)
+                    {
+                        var employeeBooking = (Employee)records;
+                        _consoleLogger.Info($"{employeeBooking.Date.ToString("HH:mm:ss")}", false);
+                        _consoleLogger.Info(" ", false);
+                        _consoleLogger.Info($"{employeeBooking.Name}");
+                    }
+                    else
+                    {
+                        var meetingBooking = (Meeting)records;
+                        _consoleLogger.Info($"{meetingBooking.Date.ToString("HH:mm")}", false);
+                        _consoleLogger.Info(" ", false);
+                        _consoleLogger.Info($"{meetingBooking.End.ToString("HH:mm")}");
+                    }
+                }
+            }
             return new List<BookingContent>();
         }
+
         private IList<object> ReadFile(string filename)
         {
             var listInputRecords = new List<InputWorkingRecords>();
@@ -134,13 +158,6 @@ namespace WorkTimeTracking.Domain
             {
                 _consoleLogger.Error($"Invalid date {inputDate} in line {lineCounter}.");
             }
-
-            parsedResult.Add(new BookingContent
-            {
-                Date = date,
-                Record = content[2],
-
-            });
 
             string dateString = content[0] + " " + content[1];
             string formatMeeting = "yyyy-MM-dd HH:mm";

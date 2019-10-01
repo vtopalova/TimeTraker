@@ -15,10 +15,16 @@ namespace WorkTimeTracking.Domain
             Console.ForegroundColor = ConsoleColor.White;
         }
 
-        public void Info(string message)
+        public void Info(string message, bool newLine = true)
         {
-            Console.WriteLine(delimiter);
-            Console.WriteLine(message);
+            if (!newLine)
+            {
+                Console.Write(message);
+            }
+            else
+            {
+                Console.WriteLine(message);
+            }
         }
 
         public void Warning(string message)

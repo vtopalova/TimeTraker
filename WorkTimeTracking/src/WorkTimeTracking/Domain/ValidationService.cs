@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using WorkTimeTracking.Abstractions;
 using WorkTimeTracking.Errors;
@@ -9,7 +8,6 @@ namespace WorkTimeTracking.Domain
     internal class ValidationService : IValidationService
     {
         private readonly IErrorResolver _errorResolver;
-
         public ValidationService(IErrorResolver errorResolver)
         {
             _errorResolver = errorResolver;

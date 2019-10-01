@@ -27,7 +27,7 @@ namespace WorkTimeTracking
 
             try
             {
-                if (args.Length == 2)
+                if (args.Length == 1)
                 {
                     var parsedContent = workTimeService.ParseInput(args[0]);
 
@@ -35,7 +35,7 @@ namespace WorkTimeTracking
                     {
                         workTimeService.ValidateContent(parsedContent);
 
-                        workTimeService.CreateOutput(parsedContent, args[1]);
+                        workTimeService.CreateOutput(parsedContent);
                     }
                 }
             }

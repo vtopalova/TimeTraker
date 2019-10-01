@@ -2,7 +2,7 @@
   "profiles": {
     "WorkTimeTracking": {
       "commandName": "Project",
-      "commandLineArgs": "D:\\Interviews\\WorkingTimeTracker\\WorkTimeTracking\\Files\\OriginalFile"
+      "commandLineArgs": "D:\\Interviews\\committed\\TimeTraker\\WorkTimeTracking\\Files\\OriginalFile"
     }
   }
 }

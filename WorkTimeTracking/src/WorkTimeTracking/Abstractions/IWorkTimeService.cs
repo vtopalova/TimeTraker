@@ -9,6 +9,6 @@ namespace WorkTimeTracking.Abstractions
 
         void ValidateContent(IList<object> parsedContent);
 
-        IList<BookingContent> CreateOutput(IList<object> parsedContent, string outputFile);
+        IList<BookingContent> CreateOutput(IList<object> parsedContent);
     }
 }
