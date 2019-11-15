@@ -14,4 +14,4 @@ jobs:
       with:
         dotnet-version: 2.2.108
     - name: Build with dotnet
-      run: dotnet build --project ../../WorkTimeTracking/src/WorkTimeTracking/WorkTimeTracking.csproj
+      run: dotnet build ../../WorkTimeTracking/src/WorkTimeTracking/WorkTimeTracking.csproj
